@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Direktes Satz-Puzzle</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 650px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 5px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .progress-indicator {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #457b9d;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .translation-hint {
+            text-align: center;
+            font-style: italic;
+            color: #4a5568;
+            background: #edf2f7;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+
+        /* --- Zielbereich --- */
+        .target-area {
+            background-color: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            min-height: 80px;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            transition: all 0.2s ease;
+        }
+
+        /* --- Wort-Blöcke --- */
+        .words-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+            min-height: 50px;
+        }
+
+        .word-token {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        @media (hover: hover) {
+            .word-token:hover:not(.disabled) {
+                border-color: var(--primary-color);
+                transform: translateY(-2px);
+            }
+        }
+
+        .word-token.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* Status-Farben */
+        .word-token.correct-placed {
+            background: #d1fae5 !important;
+            border-color: var(--success-color) !important;
+            color: #065f46 !important;
+            cursor: default;
+        }
+
+        .word-token.wrong-placed {
+            background: #ffe3e3 !important;
+            border-color: var(--error-color) !important;
+            color: #b71c1c !important;
+            animation: shake 0.4s ease;
+        }
+
+        /* --- Kontroll-Button --- */
+        .btn-reset {
+            display: block;
+            margin: 0 auto;
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-reset:hover { background: #475569; }
+
+        /* --- Feedback --- */
+        .feedback {
+            text-align: center;
+            min-height: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            line-height: 1.4;
+            margin-top: 20px;
+        }
+
+        .success-text { color: var(--success-color); }
+        .error-text { color: var(--error-color); }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Russisches Satz-Puzzle</h1>
+    <div class="progress-indicator" id="progress-text">Satz 1 von 6</div>
+    <p class="instruction">Finde die richtige Wortreihenfolge. Tippe das jeweils nächste logische Wort an. Falsche Antworten fliegen direkt zurück.</p>
+
+    <div class="translation-hint" id="translation-hint">
+        <!-- Wird per JS geladen -->
+    </div>
+
+    <div class="target-area" id="target-area"></div>
+    <div class="words-pool" id="words-pool"></div>
+
+    <button class="btn-reset" onclick="resetGame()">Neustart</button>
+    <div class="feedback" id="feedback-area"></div>
+</div>
+
+<script>
+    // Die 6 Sätze basierend auf dem Transkript und der Vokabelanleitung
+    const sentences = [
+        {
+            words: ["Ты", "меня", "обманул,", "и", "это", "последняя", "капля."],
+            translation: "„Du hast mich belogen, und das bringt das Fass zum Überlaufen.“"
+        },
+        {
+            words: ["Собирай", "свои", "вещи", "и", "уходи!"],
+            translation: "„Pack deine Sachen und geh!“"
+        },
+        {
+            words: ["Это", "последняя", "капля", "для", "меня."],
+            translation: "„Das ist der letzte Tropfen für mich.“"
+        },
+        {
+            words: ["Кто-то", "сделал", "что-то", "плохое."],
+            translation: "„Jemand hat etwas Schlechtes getan.“"
+        },
+        {
+            words: ["Я", "больше", "не", "могу", "быть", "спокойным."],
+            translation: "„Ich kann nicht mehr ruhig bleiben.“"
+        },
+        {
+            words: ["Напишите", "ваш", "пример", "в", "комментариях."],
+            translation: "„Schreibt euer Beispiel in die Kommentare.“"
+        }
+    ];
+
+    let currentSentenceIdx = 0;
+    let placedCount = 0;
+    let isProcessing = false; // Verhindert wilde Klicks während der Fehleranimation
+
+    function initSentence() {
+        if (currentSentenceIdx >= sentences.length) {
+            // Spiel komplett geschafft
+            document.getElementById('progress-text').textContent = "Fertig!";
+            document.getElementById('translation-hint').innerHTML = "🎉 <strong>Hervorragend!</strong> Du hast alle 6 Sätze fehlerfrei zusammengebaut.";
+            document.getElementById('target-area').innerHTML = '';
+            document.getElementById('words-pool').innerHTML = '';
+            document.getElementById('feedback-area').innerHTML = '';
+            return;
+        }
+
+        isProcessing = false;
+        placedCount = 0;
+        const currentData = sentences[currentSentenceIdx];
+
+        // UI Aktualisierungen
+        document.getElementById('progress-text').textContent = `Satz ${currentSentenceIdx + 1} von ${sentences.length}`;
+        document.getElementById('translation-hint').textContent = currentData.translation;
+        document.getElementById('feedback-area').innerHTML = '';
+        document.getElementById('target-area').innerHTML = '';
+
+        const pool = document.getElementById('words-pool');
+        pool.innerHTML = '';
+
+        // Wörter klonen und mischen
+        const shuffled = [...currentData.words].sort(() => Math.random() - 0.5);
+
+        shuffled.forEach((word) => {
+            const token = document.createElement('div');
+            token.className = 'word-token';
+            token.textContent = word;
+            token.onclick = () => handleWordClick(token, word);
+            pool.appendChild(token);
+        });
+    }
+
+    function handleWordClick(tokenElement, clickedWord) {
+        if (isProcessing || tokenElement.classList.contains('correct-placed')) return;
+
+        const currentData = sentences[currentSentenceIdx];
+        const targetWord = currentData.words[placedCount]; // Das Wort, das jetzt dran sein MÜSSTE
+
+        const targetArea = document.getElementById('target-area');
+
+        if (clickedWord === targetWord) {
+            // RICHTIG!
+            tokenElement.classList.add('correct-placed');
+            
+            // Klon erstellen für den Zielbereich, um Animation sauber zu trennen
+            const clone = tokenElement.cloneNode(true);
+            targetArea.appendChild(clone);
+            
+            // Original im Pool unsichtbar/inaktiv machen
+            tokenElement.classList.add('disabled');
+            
+            placedCount++;
+            document.getElementById('feedback-area').innerHTML = '';
+
+            // Prüfen, ob der gesamte Satz vollendet ist
+            if (placedCount === currentData.words.length) {
+                isProcessing = true;
+                document.getElementById('feedback-area').innerHTML = '<span class="success-text">Super! Satz komplett.</span>';
+                
+                setTimeout(() => {
+                    currentSentenceIdx++;
+                    initSentence();
+                }, 1200);
+            }
+        } else {
+            // FALSCH!
+            isProcessing = true;
+            tokenElement.classList.add('wrong-placed');
+            document.getElementById('feedback-area').innerHTML = '<span class="error-text">Das ist nicht das nächste Wort.</span>';
+
+            // Nach der Schüttel-Animation wieder zurücksetzen
+            setTimeout(() => {
+                tokenElement.classList.remove('wrong-placed');
+                document.getElementById('feedback-area').innerHTML = '';
+                isProcessing = false;
+            }, 500);
+        }
+    }
+
+    function resetGame() {
+        currentSentenceIdx = 0;
+        initSentence();
+    }
+
+    // Direkt beim Laden starten
+    window.onload = initSentence;
+</script>
+
+</body>
+</html>
