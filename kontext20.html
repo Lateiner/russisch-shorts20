@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Situations-Check Extended</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .phrase-box {
+            background-color: #e0f2fe;
+            border: 2px dashed var(--primary-color);
+            color: #0369a1;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .scenarios-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .scenario-card {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .scenario-letter {
+            background: #f1f5f9;
+            color: #4a5568;
+            font-weight: bold;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            font-size: 0.95rem;
+        }
+
+        .scenario-text {
+            font-size: 1rem;
+            line-height: 1.4;
+            color: var(--text-color);
+        }
+
+        @media (hover: hover) {
+            .scenario-card:hover:not(.disabled) {
+                border-color: var(--primary-color);
+                background: #fdfdfe;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            }
+        }
+
+        .scenario-card.correct {
+            background-color: #d1fae5;
+            border-color: var(--success-color);
+        }
+        .scenario-card.correct .scenario-letter {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .scenario-card.wrong {
+            background-color: #ffe3e3;
+            border-color: var(--error-color);
+            opacity: 0.7;
+        }
+        .scenario-card.wrong .scenario-letter {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .scenario-card.disabled {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .feedback {
+            margin-top: 25px;
+            text-align: center;
+            min-height: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            line-height: 1.5;
+        }
+
+        .success-text { color: var(--success-color); }
+        .error-text { color: var(--error-color); }
+
+        .btn-reset {
+            display: block;
+            margin: 20px auto 0 auto;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: none;
+        }
+
+        .btn-reset:hover {
+            background: #357abd;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Situations-Check</h1>
+    <p class="instruction">Wähle eine Situation aus, in der man verärgert ausruft:</p>
+
+    <div class="phrase-box">„Это последняя капля!“</div>
+
+    <div class="scenarios-list" id="scenarios-container">
+        <!-- Wird per JS geladen -->
+    </div>
+
+    <div class="feedback" id="feedback-area"></div>
+    <button class="btn-reset" id="reset-btn" onclick="resetQuiz()">Nächste Runde</button>
+</div>
+
+<script>
+    // Der erweiterte Pool aus nun 6 Situationen
+    const scenariosPool = [
+        {
+            text: "Ein Mitarbeiter kommt diese Woche bereits zum fünften Mal deutlich zu spät zur Arbeit. Der Chef verliert im Büro komplett die Fassung und schimpft.",
+            isCorrect: true,
+            explanation: "Richtig! Die wiederholten Verspätungen haben das Fass beim Chef zum Überlaufen gebracht. Seine Geduld ist endgültig vorbei."
+        },
+        {
+            text: "Jemand geht am Nachmittag entspannt im Park spazieren, blickt zufällig auf den Boden und findet überraschend einen 50-Euro-Schein auf dem Gehweg.",
+            isCorrect: false,
+            explanation: "Das passt nicht. Das ist eine erfreuliche Überraschung, kein Grund für Wut oder das Ende der Geduld."
+        },
+        {
+            text: "Ein Schüler setzt sich abends an seinen Schreibtisch und lernt freiwillig und hochmotiviert Vokabeln, weil ihm die russische Sprache Spaß macht.",
+            isCorrect: false,
+            explanation: "Leider falsch. Hier liegt keine Frustration oder ein wiederholtes Ärgernis vor."
+        },
+        {
+            text: "Dein Mitbewohner verspricht seit Wochen, die Küche zu putzen. Als du heute nach Hause kommst, ist die Küche dreckiger als je zuvor und voller Schimmel.",
+            isCorrect: true,
+            explanation: "Absolut richtig! Nach wochenlangen leeren Versprechungen ist dieser Zustand der Auslöser dafür, dass dir der Kragen platzt."
+        },
+        {
+            text: "Ein Autofahrer steht auf dem Weg in den Urlaub für zehn Minuten in einem kleinen, völlig normalen Stau vor einer bekannten Baustelle.",
+            isCorrect: false,
+            explanation: "Nicht ganz. Ein kurzer, normaler Stau ist zwar lästig, beschreibt aber meistens noch nicht den dramatischen 'letzten Tropfen' einer langen Kette von Fehlschlägen."
+        },
+        {
+            text: "Eine Person wartet am Bahnhof auf den Zug. Der Zug fährt pünktlich auf die Minute ein und sie bekommt sofort einen freien Sitzplatz am Fenster.",
+            isCorrect: false,
+            explanation: "Falsch. Das ist ein reibungsloser, positiver Ablauf im Alltag."
+        }
+    ];
+
+    function initQuiz() {
+        const container = document.getElementById('scenarios-container');
+        container.innerHTML = '';
+        document.getElementById('feedback-area').innerHTML = '';
+        document.getElementById('reset-btn').style.display = 'none';
+
+        // Die Liste wird bei jedem Durchgang komplett gemischt
+        const shuffled = [...scenariosPool].sort(() => Math.random() - 0.5);
+
+        // Buchstaben A, B, C, D... dynamisch zuweisen
+        const alphabet = ["A", "B", "C", "D", "E", "F"];
+
+        shuffled.forEach((scenario, index) => {
+            const card = document.createElement('div');
+            card.className = 'scenario-card';
+            
+            card.innerHTML = `
+                <div class="scenario-letter">${alphabet[index]}</div>
+                <div class="scenario-text">${scenario.text}</div>
+            `;
+
+            card.onclick = () => checkScenario(card, scenario, shuffled);
+            container.appendChild(card);
+        });
+    }
+
+    function checkScenario(selectedCard, scenarioData, currentList) {
+        const allCards = document.querySelectorAll('.scenario-card');
+        const feedback = document.getElementById('feedback-area');
+
+        allCards.forEach(card => card.classList.add('disabled'));
+
+        if (scenarioData.isCorrect) {
+            selectedCard.classList.add('correct');
+            feedback.innerHTML = `<span class="success-text">🎉 Absolut richtig!<br>${scenarioData.explanation}</span>`;
+        } else {
+            selectedCard.classList.add('wrong');
+            feedback.innerHTML = `<span class="error-text">Das passt leider nicht.<br>${scenarioData.explanation}</span>`;
+
+            // Alle korrekten Antworten auf dem Bildschirm grün hervorheben (da es 2 richtige im Pool gibt)
+            allCards.forEach(card => {
+                const textEl = card.querySelector('.scenario-text').textContent;
+                const matchInCurrentList = currentList.find(s => s.text === textEl);
+                if (matchInCurrentList && matchInCurrentList.isCorrect) {
+                    card.classList.add('correct');
+                }
+            });
+        }
+
+        document.getElementById('reset-btn').style.display = 'block';
+    }
+
+    function resetQuiz() {
+        initQuiz();
+    }
+
+    window.onload = initQuiz;
+</script>
+
+</body>
+</html>
