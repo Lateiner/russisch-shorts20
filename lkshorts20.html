@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Lernkartei: Vokabeltrainer</title>
+    <style>
+        :root {
+            --bg-gradient-start: #e8f5e9;
+            --bg-gradient-end: #c8e6c9;
+            --primary-green: #2e7d32;
+            --primary-hover: #1b5e20;
+            --accent-green: #81c784;
+            --card-front-bg: #ffffff;
+            --card-back-bg: #f1f8e9;
+            --text-dark: #1b5e20;
+            --text-muted: #558b2f;
+            --shadow-color: rgba(46, 125, 50, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary-green);
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .progress {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background-color: rgba(255, 255, 255, 0.6);
+            padding: 4px 12px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px var(--shadow-color);
+        }
+
+        /* --- 3D Flashcard Stage --- */
+        .card-stage {
+            width: 100%;
+            height: 320px;
+            perspective: 1200px;
+            cursor: pointer;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px var(--shadow-color);
+            border-radius: 16px;
+        }
+
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 3px solid var(--accent-green);
+        }
+
+        .card-front {
+            background-color: var(--card-front-bg);
+            color: var(--text-dark);
+        }
+
+        .card-back {
+            background-color: var(--card-back-bg);
+            color: var(--text-dark);
+            transform: rotateY(180deg);
+            border-color: var(--primary-green);
+        }
+
+        .card-content {
+            font-size: 2rem;
+            font-weight: bold;
+            word-break: break-word;
+            transition: font-size 0.2s ease;
+            width: 100%;
+        }
+
+        .card-hint {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-style: italic;
+            max-width: 90%;
+        }
+
+        .card-side-indicator {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            opacity: 0.4;
+        }
+
+        /* --- Controls & Buttons --- */
+        .controls-row {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .btn {
+            background-color: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            user-select: none;
+            flex: 1;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px var(--shadow-color);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            color: var(--primary-green);
+            border: 2px solid var(--primary-green);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--card-back-bg);
+            color: var(--primary-hover);
+        }
+
+        .instructions-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 480px) {
+            h1 { font-size: 1.5rem; }
+            .card-stage { height: 260px; }
+            .card-content { font-size: 1.6rem; }
+            .btn { padding: 10px 12px; font-size: 0.85rem; }
+            .controls-row { flex-wrap: wrap; }
+            .nav-group, .util-group { width: 100%; display: flex; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Russisch-Vokabeltrainer</h1>
+        <div class="progress" id="progressIndicator">0 / 0</div>
+    </header>
+
+    <!-- Interaktive Karte -->
+    <div class="card-stage" id="cardStage" role="button" aria-label="Karteikarte umdrehen" tabindex="0">
+        <div class="card" id="flashcard">
+            <div class="card-face card-front">
+                <div class="card-side-indicator">Russisch</div>
+                <div class="card-content" id="frontText">Загрузка...</div>
+                <div class="card-hint" id="frontHint"></div>
+            </div>
+            <div class="card-face card-back">
+                <div class="card-side-indicator">Deutsch</div>
+                <div class="card-content" id="backText">Laden...</div>
+                <div class="card-hint" id="backHint"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Steuerungstasten -->
+    <div class="controls-row">
+        <div class="nav-group" style="display: flex; flex: 2; gap: 10px;">
+            <button class="btn" id="btnPrev">← Vorherige</button>
+            <button class="btn" id="btnNext">Nächste →</button>
+        </div>
+    </div>
+    <div class="controls-row">
+        <div class="util-group" style="display: flex; flex: 1; gap: 10px;">
+            <button class="btn btn-secondary" id="btnHome">An den Anfang</button>
+            <button class="btn btn-secondary" id="btnShuffle">🔀 Mischen</button>
+        </div>
+    </div>
+
+    <div class="instructions-hint">
+        <strong>Tastatursteuerung:</strong> <kbd>←</kbd> <kbd>→</kbd> Navigation | <kbd>Leertaste</kbd> / <kbd>Enter</kbd> Umdrehen | <kbd>Pos1 (Home)</kbd> Anfang
+    </div>
+</div>
+
+<script>
+    // Strukturierter Vokabel-Datensatz direkt aus dem Text-Parsing extrahiert
+    const rawVocabulary = [
+        { front: "э́то", back: "das, dies" },
+        { front: "после́дний", back: "letzter, letzte, letztes" },
+        { front: "ка́пля", back: "der Tropfen" },
+        { front: "собира́ть (NSV) / собра́ть (SV)", back: "sammeln, packen" },
+        { front: "свой", back: "mein, dein, sein, ihr, unser, euer (eigenes)" },
+        { front: "вещь", back: "die Sache, das Ding, der Gegenstand" },
+        { front: "и", back: "und" },
+        { front: "уходи́ть (NSV) / уйти́ (SV)", back: "weggehen, gehen" },
+        { front: "ты", back: "du" },
+        { front: "я", back: "ich" },
+        { front: "мы", back: "wir" },
+        { front: "вы", back: "ihr, Sie" },
+        { front: "меня́", back: "mich (Akkusativ) / meiner (Genitiv)" },
+        { front: "обма́нывать (NSV) / обману́ть (SV)", back: "belügen, betrügen, täuschen" },
+        { front: "для", back: "für", backNote: "verlangt den Genitiv" },
+        { front: "кто́-то", back: "jemand" },
+        { front: "де́лать (NSV) / сде́лать (SV)", back: "machen, tun" },
+        { front: "что́-то", back: "etwas" },
+        { front: "плохо́й", back: "schlecht" },
+        { front: "хоро́ший", back: "gut" },
+        { front: "интере́сный", back: "interessant" },
+        { front: "но́вый", back: "neu" },
+        { front: "бо́льше", back: "mehr" },
+        { front: "не", back: "nicht" },
+        { front: "мо́чь (NSV) / смо́чь (SV)", back: "können, fähig sein" },
+        { front: "бы́ть (NSV/SV)", back: "sein" },
+        { front: "споко́йный", back: "ruhig" },
+        { front: "весёлый", back: "lustig, fröhlich" },
+        { front: "за́нятый", back: "beschäftigt" },
+        { front: "гото́вый", back: "bereit, fertig" },
+        { front: "писа́ть (NSV) / написа́ть (SV)", back: "schreiben" },
+        { front: "ваш", back: "euer, Ihr" },
+        { front: "приме́р", back: "das Beispiel" },
+        { front: "в", back: "in, an", frontNote: "verlangt den Präpositiv/Akkusativ" },
+        { front: "коммента́рий", back: "der Kommentar" },
+        { front: "тетра́дь", back: "das Heft" },
+        { front: "письмо́", back: "der Brief" },
+        { front: "кни́га", back: "das Buch" },
+        { front: "пе́рвый", back: "erster, erste, erstes" },
+        { front: "большо́й", back: "groß" },
+        { front: "открыва́ть (NSV) / откры́ть (SV)", back: "öffnen" },
+        { front: "забыва́ть (NSV) / забы́ть (SV)", back: "vergessen" },
+        { front: "слу́шать (NSV) / послу́шать (SV)", back: "hören, zuhören" },
+        { front: "обнима́ть (NSV) / обня́ть (SV)", back: "umarmen" },
+        { front: "пого́да", back: "das Wetter" },
+        { front: "сего́дня", back: "heute" },
+        { front: "о́чень", back: "sehr" },
+        { front: "купи́ть (SV) / покупа́ть (NSV)", back: "kaufen" },
+        { front: "вку́сный", back: "lecker, schmackhaft" },
+        { front: "чай", back: "der Tee" },
+        { front: "наш", back: "unser" },
+        { front: "компью́тер", back: "der Computer" },
+        { front: "опя́ть", back: "wieder, von Neuem" },
+        { front: "лома́ться (NSV) / слома́ться (SV)", back: "kaputtgehen, brechen" },
+        { front: "деся́тый", back: "zehnter, zehnte, zehntes" },
+        { front: "раз", back: "das Mal" },
+        { front: "всё", back: "alles" },
+        { front: "идти́ (NSV) / пойти́ (SV)", back: "gehen" },
+        { front: "стро́го", back: "streng, genau" },
+        { front: "po", back: "nach, gemäß, durch", frontNote: "verlangt den Dativ" },
+        { front: "план", back: "der Plan" },
+        { front: "спаси́бо", back: "danke" },
+        { front: "обяза́тельно", back: "unbedingt" },
+        { front: "почему́", back: "warum" },
+        { front: "шеф", back: "der Chef" },
+        { front: "крича́ть (NSV) / кри́кнуть (SV)", back: "schreien, rufen" },
+        { front: "зли́ться (NSV) / разозли́ться (SV)", back: "wütend sein, sich ärgern" },
+        { front: "потому́ что", back: "weil" },
+        { front: "сно́ва", back: "wieder, erneut" },
+        { front: "опа́здывать (NSV) / опозда́ть (SV)", back: "sich verspäten, zu spät kommen" },
+        { front: "на", back: "auf, zu", frontNote: "verlangt den Akkusativ/Präpositiv" },
+        { front: "рабо́та", back: "die Arbeit" },
+        { front: "где", back: "wo" },
+        { front: "мо́жно", back: "man kann, es ist erlaubt" },
+        { front: "ко́фе", back: "der Kaffee" },
+        { front: "да", back: "ja" },
+        { front: "его́", back: "sein, ihm, ihn" },
+        { front: "терпе́ние", back: "die Geduld" },
+        { front: "по́лностью", back: "vollständig, komplett" },
+        { front: "зака́нчиваться (NSV) / зако́нчиться (SV)", back: "enden, zu Ende gehen" },
+        { front: "действи́тельно", back: "wirklich, tatsächlich" },
+        { front: "была́", back: "war (weibliche Form von sein)" },
+        { front: "люби́ть (NSV) / полюби́ть (SV)", back: "lieben, mögen" },
+        { front: "гуля́ть (NSV) / погуля́ть (SV)", back: "spazieren gehen" },
+        { front: "парк", back: "der Park" },
+        { front: "ве́чер", back: "der Abend" }
+    ];
+
+    let currentDeck = [...rawVocabulary];
+    let currentIndex = 0;
+
+    // DOM-Elemente abfangen
+    const flashcard = document.getElementById('flashcard');
+    const cardStage = document.getElementById('cardStage');
+    const frontText = document.getElementById('frontText');
+    const frontHint = document.getElementById('frontHint');
+    const backText = document.getElementById('backText');
+    const backHint = document.getElementById('backHint');
+    const progressIndicator = document.getElementById('progressIndicator');
+
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const btnHome = document.getElementById('btnHome');
+    const btnShuffle = document.getElementById('btnShuffle');
+
+    // Dynamische Anpassung der Schriftgröße zur Vermeidung von Textüberlauf
+    function adjustFontSize(element, text) {
+        const length = text.length;
+        if (length > 40) {
+            element.style.fontSize = '1.25rem';
+        } else if (length > 20) {
+            element.style.fontSize = '1.6rem';
+        } else {
+            element.style.fontSize = '2.1rem';
+        }
+    }
+
+    // Karte mit aktuellen Inhalten füllen
+    function updateCard() {
+        // Zustand auf Vorderseite zurücksetzen vor dem Datentausch
+        flashcard.classList.remove('is-flipped');
+
+        setTimeout(() => {
+            const cardData = currentDeck[currentIndex];
+            
+            frontText.textContent = cardData.front;
+            frontHint.textContent = cardData.frontNote || '';
+            backText.textContent = cardData.back;
+            backHint.textContent = cardData.backNote || '';
+
+            adjustFontSize(frontText, cardData.front);
+            adjustFontSize(backText, cardData.back);
+
+            progressIndicator.textContent = `${currentIndex + 1} / ${currentDeck.length}`;
+        }, flashcard.classList.contains('is-flipped') ? 150 : 0); 
+        // Synchronisiert den Textwechsel leicht verzögert, falls die Karte noch rotiert war
+    }
+
+    function toggleFlip() {
+        flashcard.classList.toggle('is-flipped');
+    }
+
+    function nextCard() {
+        if (currentIndex < currentDeck.length - 1) {
+            currentIndex++;
+            updateCard();
+        } else {
+            // Endlosschleife am Ende: Zurück zum Start
+            currentIndex = 0;
+            updateCard();
+        }
+    }
+
+    function prevCard() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            updateCard();
+        } else {
+            // Endlosschleife am Anfang: Zum Ende springen
+            currentIndex = currentDeck.length - 1;
+            updateCard();
+        }
+    }
+
+    function goToStart() {
+        currentIndex = 0;
+        updateCard();
+    }
+
+    // Durshuffling nach dem Fisher-Yates-Verfahren
+    function shuffleDeck() {
+        for (let i = currentDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [currentDeck[i], currentDeck[j]] = [currentDeck[j], currentDeck[i]];
+        }
+        goToStart();
+    }
+
+    // --- Event Listener Click-Events ---
+    cardStage.addEventListener('click', toggleFlip);
+    btnNext.addEventListener('click', nextCard);
+    btnPrev.addEventListener('click', prevCard);
+    btnHome.addEventListener('click', goToStart);
+    btnShuffle.addEventListener('click', shuffleDeck);
+
+    // --- Event Listener Tastatursteuerung ---
+    document.addEventListener('keydown', (event) => {
+        // Verhindert das Standard-Scrolling der Leertaste beim Lernen
+        if (event.key === ' ' && document.activeElement === cardStage || event.key === ' ') {
+            event.preventDefault();
+        }
+
+        switch (event.key) {
+            case ' ':
+            case 'Enter':
+                toggleFlip();
+                break;
+            case 'ArrowRight':
+                nextCard();
+                break;
+            case 'ArrowLeft':
+                prevCard();
+                break;
+            case 'Home':
+                goToStart();
+                break;
+        }
+    });
+
+    // App-Initialisierung
+    updateCard();
+</script>
+
+</body>
+</html>
