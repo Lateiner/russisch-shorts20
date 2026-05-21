@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Lückentext-Auswahl</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 650px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 5px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .progress-indicator {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #457b9d;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        /* --- Satzbox mit Lücke --- */
+        .sentence-box {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            font-size: 1.3rem;
+            line-height: 1.8;
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        /* --- Stylisiertes Dropdown --- */
+        .cloze-select {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border: 2px solid var(--primary-color);
+            border-radius: 6px;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            margin: 0 5px;
+        }
+
+        .cloze-select:focus {
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+        }
+
+        /* Status-Farben für das Dropdown */
+        .cloze-select.correct {
+            background-color: #d1fae5;
+            border-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .cloze-select.wrong {
+            background-color: #ffe3e3;
+            border-color: var(--error-color);
+            color: #b71c1c;
+        }
+
+        .translation-hint {
+            text-align: center;
+            font-style: italic;
+            color: #4a5568;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        /* --- Button & Feedback --- */
+        .btn-reset {
+            display: block;
+            margin: 0 auto;
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-reset:hover { background: #475569; }
+
+        .feedback {
+            text-align: center;
+            min-height: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            line-height: 1.4;
+            margin-top: 20px;
+        }
+
+        .success-text { color: var(--success-color); }
+        .error-text { color: var(--error-color); }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Lückentext-Quiz</h1>
+    <div class="progress-indicator" id="progress-text">Aufgabe 1 von 6</div>
+    <p class="instruction">Wähle das passende russische Wort aus dem Dropdown-Menü aus, um die Lücke korrekt zu füllen.</p>
+
+    <!-- Der Satz mit der dynamischen Lücke -->
+    <div class="sentence-box" id="sentence-container">
+        <!-- Wird per JS befüllt -->
+    </div>
+
+    <div class="translation-hint" id="translation-hint">
+        <!-- Wird per JS befüllt -->
+    </div>
+
+    <button class="btn-reset" onclick="resetGame()">Neustart</button>
+    <div class="feedback" id="feedback-area"></div>
+</div>
+
+<script>
+    // Die 6 Lückentexte mit Optionen und der korrekten Antwort
+    const quizData = [
+        {
+            before: "Ты меня обманул, и это",
+            after: "капля.",
+            options: ["первая", "последняя", "новая"],
+            correct: "последняя",
+            translation: "Bedeutung: „Du hast mich belogen, und das ist der letzte Tropfen (das Fass läuft über).“"
+        },
+        {
+            before: "Собирай свои",
+            after: "и уходи!",
+            options: ["книги", "вещи", "деньги"],
+            correct: "вещи",
+            translation: "Bedeutung: „Pack deine Sachen und geh!“"
+        },
+        {
+            before: "Это последняя капля для",
+            after: ".",
+            options: ["меня", "тебя", "нас"],
+            correct: "меня",
+            translation: "Bedeutung: „Das ist der letzte Tropfen für mich.“"
+        },
+        {
+            before: "Кто-то сделал что-то",
+            after: ".",
+            options: ["хорошее", "интересное", "плохое"],
+            correct: "плохое",
+            translation: "Bedeutung: „Jemand hat etwas Schlechtes getan.“"
+        },
+        {
+            before: "Я больше не могу быть",
+            after: ".",
+            options: ["весёлым", "спокойным", "занятым"],
+            correct: "спокойным",
+            translation: "Bedeutung: „Ich kann nicht mehr ruhig bleiben.“"
+        },
+        {
+            before: "Напишите ваш пример в",
+            after: ".",
+            options: ["комментариях", "тетради", "письме"],
+            correct: "комментариях",
+            translation: "Bedeutung: „Schreibt euer Beispiel in die Kommentare.“"
+        }
+    ];
+
+    let currentQuestionIdx = 0;
+
+    function initQuestion() {
+        if (currentQuestionIdx >= quizData.length) {
+            // Alle Aufgaben gelöst
+            document.getElementById('progress-text').textContent = "Fertig!";
+            document.getElementById('instruction').style.display = 'none';
+            document.getElementById('sentence-container').innerHTML = "🎉 <strong>Ausgezeichnet!</strong> Du hast alle Lücken fehlerfrei ausgefüllt.";
+            document.getElementById('translation-hint').textContent = "";
+            document.getElementById('feedback-area').innerHTML = "";
+            return;
+        }
+
+        const currentData = quizData[currentQuestionIdx];
+        
+        // UI aktualisieren
+        document.getElementById('progress-text').textContent = `Aufgabe ${currentQuestionIdx + 1} von ${quizData.length}`;
+        document.getElementById('translation-hint').textContent = currentData.translation;
+        document.getElementById('feedback-area').innerHTML = '';
+
+        // Dropdown HTML-String bauen
+        // Erste Option ist ein leerer Platzhalter
+        let selectHtml = `<select class="cloze-select" id="cloze-dropdown" onchange="checkAnswer(this)">`;
+        selectHtml += `<option value="" disabled selected>...</option>`;
+        
+        // Optionen mischen, damit die korrekte Antwort nicht immer an derselben Stelle steht
+        const shuffledOptions = [...currentData.options].sort(() => Math.random() - 0.5);
+        
+        shuffledOptions.forEach(opt => {
+            selectHtml += `<option value="${opt}">${opt}</option>`;
+        });
+        selectHtml += `</select>`;
+
+        // Satz im Container zusammensetzen
+        const sentenceContainer = document.getElementById('sentence-container');
+        sentenceContainer.innerHTML = `${currentData.before} ${selectHtml} ${currentData.after}`;
+    }
+
+    function checkAnswer(selectElement) {
+        const selectedValue = selectElement.value;
+        const currentData = quizData[currentQuestionIdx];
+        const feedback = document.getElementById('feedback-area');
+
+        if (selectedValue === currentData.correct) {
+            // Richtig gelöst
+            selectElement.className = "cloze-select correct";
+            selectElement.disabled = true; // Auswahl einfrieren
+            feedback.innerHTML = '<span class="success-text">🎉 Richtig! Gut gemacht.</span>';
+
+            // Nach einer kurzen Pause zur nächsten Frage wechseln
+            setTimeout(() => {
+                currentQuestionIdx++;
+                initQuestion();
+            }, 1200);
+        } else {
+            // Falsch gelöst
+            selectElement.className = "cloze-select wrong";
+            feedback.innerHTML = '<span class="error-text">Leider falsch. Versuch es noch einmal!</span>';
+            
+            // Nach kurzer Zeit rot zurücksetzen, damit der Schüler neu wählen kann
+            setTimeout(() => {
+                selectElement.className = "cloze-select";
+                selectElement.value = ""; // Wieder auf Platzhalter setzen
+                feedback.innerHTML = '';
+            }, 1000);
+        }
+    }
+
+    function resetGame() {
+        currentQuestionIdx = 0;
+        initQuestion();
+    }
+
+    // Beim Start direkt laden
+    window.onload = initQuestion;
+</script>
+
+</body>
+</html>
