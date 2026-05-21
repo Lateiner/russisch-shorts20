@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Richtig oder Falsch?</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 600px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 5px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #e2e8f0;
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .statement-box {
+            background-color: #f1f5f9;
+            border-left: 5px solid var(--primary-color);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            font-size: 1.15rem;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .btn-choice {
+            border: 2px solid #e2e8f0;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            user-select: none;
+            text-align: center;
+        }
+
+        .btn-true { color: var(--success-color); border-color: var(--success-color); }
+        .btn-false { color: var(--error-color); border-color: var(--error-color); }
+
+        @media (hover: hover) {
+            .btn-true:hover:not(.disabled) { background-color: #e6fbf7; transform: translateY(-2px); }
+            .btn-false:hover:not(.disabled) { background-color: #ffebebc4; transform: translateY(-2px); }
+        }
+
+        /* Zustand nach dem Klicken */
+        .btn-choice.correct-selected { background-color: #2ec4b6 !important; color: white !important; border-color: #2ec4b6 !important; }
+        .btn-choice.wrong-selected { background-color: #e71d36 !important; color: white !important; border-color: #e71d36 !important; }
+        .btn-choice.disabled { opacity: 0.5; cursor: default; pointer-events: none; }
+
+        .explanation-box {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .explanation-box.correct { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .explanation-box.wrong { background-color: #ffe3e3; color: #b71c1c; border: 1px solid #fecaca; }
+
+        .btn-next {
+            margin-top: 20px;
+            background: var(--text-color);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            display: none;
+            transition: background 0.2s;
+        }
+
+        .btn-next:hover { background: #131520; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Richtig oder Falsch?</h1>
+    
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress"></div>
+    </div>
+
+    <div class="statement-box" id="statement">
+        <!-- Wird per JS befüllt -->
+    </div>
+
+    <div class="btn-container">
+        <button class="btn-choice btn-true" id="btn-true" onclick="handleAnswer(true)">Richtig</button>
+        <button class="btn-choice btn-false" id="btn-false" onclick="handleAnswer(false)">Falsch</button>
+    </div>
+
+    <div class="explanation-box" id="explanation">
+        <!-- Wird per JS befüllt -->
+    </div>
+
+    <button class="btn-next" id="next-btn" onclick="nextQuestion()">Weiter</button>
+</div>
+
+<script>
+    // Die Fragen-Datenbank basierend auf der Anleitung
+    const questions = [
+        {
+            statement: "Man benutzt den Ausdruck „последняя капля“, wenn man sich über eine schöne, unerwartete Überraschung freut.",
+            isTrue: false,
+            explanation: "Falsch! Der Ausdruck beschreibt das Gegenteil: Er wird verwendet, wenn etwas Schlechtes oder Unangenehmes passiert ist und die Geduld am Ende ist."
+        },
+        {
+            statement: "Die wörtliche Übersetzung von „последняя капля“ lautet „der letzte Tropfen“ und entspricht der deutschen Redewendung „das Fass zum Überlaufen bringen“.",
+            isTrue: true,
+            explanation: "Richtig! Die Metapher ist im Russischen und Deutschen absolut identisch: Ein letzter Tropfen bringt ein Gefäß zum Überlaufen."
+        },
+        {
+            statement: "Wenn jemand sagt: „Это последняя капля!“, bedeutet das, dass die Person völlig ruhig und gelassen bleibt.",
+            isTrue: false,
+            explanation: "Falsch! Dieser Satz signalisiert, dass man die Situation eben nicht mehr länger ruhig ertragen kann und jetzt Konsequenzen zieht (z. B. Sachen packen)."
+        }
+    ];
+
+    let currentIdx = 0;
+
+    function showQuestion() {
+        const q = questions[currentIdx];
+        document.getElementById('statement').textContent = q.statement;
+        
+        // Progress Bar aktualisieren
+        const progressPercent = ((currentIdx) / questions.length) * 100;
+        document.getElementById('progress').style.width = `${progressPercent}%`;
+
+        // Buttons zurücksetzen
+        const tBtn = document.getElementById('btn-true');
+        const fBtn = document.getElementById('btn-false');
+        
+        tBtn.className = "btn-choice btn-true";
+        fBtn.className = "btn-choice btn-false";
+
+        document.getElementById('explanation').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'none';
+    }
+
+    function handleAnswer(selectedTrueFalse) {
+        const q = questions[currentIdx];
+        const tBtn = document.getElementById('btn-true');
+        const fBtn = document.getElementById('btn-false');
+        const expBox = document.getElementById('explanation');
+        const nextBtn = document.getElementById('next-btn');
+
+        // Buttons sperren
+        tBtn.classList.add('disabled');
+        fBtn.classList.add('disabled');
+
+        const isCorrect = (selectedTrueFalse === q.isTrue);
+
+        // Visuelles Feedback auf den Buttons verteilen
+        if (selectedTrueFalse) {
+            tBtn.classList.add(isCorrect ? 'correct-selected' : 'wrong-selected');
+        } else {
+            fBtn.classList.add(isCorrect ? 'correct-selected' : 'wrong-selected');
+        }
+
+        // Erklärungstext anzeigen
+        expBox.className = `explanation-box ${isCorrect ? 'correct' : 'wrong'}`;
+        expBox.textContent = q.explanation;
+        expBox.style.display = 'block';
+
+        // Weiter-Button einblenden
+        if (currentIdx < questions.length - 1) {
+            nextBtn.textContent = "Nächste Frage";
+        } else {
+            nextBtn.textContent = "Quiz abschließen";
+        }
+        nextBtn.style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if (currentIdx < questions.length) {
+            showQuestion();
+        } else {
+            // Quiz beendet
+            document.getElementById('progress').style.width = '100%';
+            document.getElementById('statement').innerHTML = "🎉 <strong>Ausgezeichnet!</strong> Du hast alle Fragen durchgearbeitet und das Kernkonzept der Redewendung verstanden.";
+            document.getElementById('btn-true').style.display = 'none';
+            document.getElementById('btn-false').style.display = 'none';
+            document.getElementById('explanation').style.display = 'none';
+            
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.textContent = "Quiz Neustarten";
+            nextBtn.onclick = () => {
+                currentIdx = 0;
+                document.getElementById('btn-true').style.display = 'block';
+                document.getElementById('btn-false').style.display = 'block';
+                nextBtn.onclick = nextQuestion;
+                showQuestion();
+            };
+        }
+    }
+
+    // Beim Laden der Seite erste Frage generieren
+    window.onload = showQuestion;
+</script>
+
+</body>
+</html>
