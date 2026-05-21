@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Digitales Memory</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #f8f9fa;
+            --card-bg: #1d3557;
+            --text-color: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 650px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 5px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        /* --- Memory Grid --- */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+            perspective: 1000px; /* Für den 3D-Dreheffekt */
+        }
+
+        /* Anpassung für kleinere Smartphones */
+        @media (max-width: 480px) {
+            .memory-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+        }
+
+        .memory-card {
+            aspect-ratio: 1 / 1; /* Quadratische Kärtchen */
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .memory-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* Wenn ein Paar gefunden wurde, blendet es sich langsam aus */
+        .memory-card.matched {
+            transform: rotateY(180deg);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        /* Karten-Rückseite (Verdeckt) */
+        .card-back {
+            background: linear-gradient(135deg, #1d3557 0%, #4a90e2 100%);
+            color: white;
+            border: 2px solid #ffffff;
+        }
+
+        .card-back::after {
+            content: "?";
+            font-size: 1.8rem;
+            opacity: 0.4;
+        }
+
+        /* Karten-Vorderseite (Aufgedeckt) */
+        .card-front {
+            background: #f1f5f9;
+            color: #1d3557;
+            border: 2px solid #cbd5e1;
+            transform: rotateY(180deg);
+            word-break: break-word;
+        }
+
+        /* Statusfarben beim Aufdecken */
+        .memory-card.checking .card-front {
+            border-color: var(--primary-color);
+            background: #e0f2fe;
+        }
+
+        .memory-card.correct-pair .card-front {
+            border-color: var(--success-color);
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .memory-card.wrong-pair .card-front {
+            border-color: var(--error-color);
+            background: #ffe3e3;
+            color: #b71c1c;
+        }
+
+        /* --- Kontroll-Elemente --- */
+        .btn-reset {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            align-self: center;
+        }
+        .btn-reset:hover { background: #475569; }
+
+        .feedback {
+            text-align: center;
+            min-height: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            line-height: 1.4;
+            margin-top: 20px;
+        }
+
+        .success-text { color: var(--success-color); }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Digitales Vokabel-Memory</h1>
+    <p class="instruction">Decke zwei Kärtchen nacheinander auf. Finde zusammengehörige Paare (entweder Wortpaare oder Vokabel + Übersetzung). Gefundene Paare verschwinden.</p>
+
+    <!-- Das Memory Spielfeld -->
+    <div class="memory-grid" id="game-board">
+        <!-- Wird dynamisch per JS generiert -->
+    </div>
+
+    <button class="btn-reset" onclick="resetGame()">Neustart</button>
+    <div class="feedback" id="feedback-area"></div>
+</div>
+
+<script>
+    // Die 6 zusammengehörigen Memory-Paare (ID verbindet sie)
+    const memoryPairs = [
+        { id: 1, text: "последняя" },
+        { id: 1, text: "капля" },
+        
+        { id: 2, text: "обманул" },
+        { id: 2, text: "belogen" },
+        
+        { id: 3, text: "вещи" },
+        { id: 3, text: "Sachen / Dinge" },
+        
+        { id: 4, text: "уходи" },
+        { id: 4, text: "geh weg" },
+        
+        { id: 5, text: "спокойным" },
+        { id: 5, text: "ruhig" },
+        
+        { id: 6, text: "комментариях" },
+        { id: 6, text: "Kommentare" }
+    ];
+
+    let flippedCards = [];
+    let lockBoard = false;
+    let matchesFound = 0;
+
+    function initBoard() {
+        const board = document.getElementById('game-board');
+        board.innerHTML = '';
+        document.getElementById('feedback-area').innerHTML = '';
+        flippedCards = [];
+        lockBoard = false;
+        matchesFound = 0;
+
+        // Karten-Pool klonen und komplett zufällig durchmischen
+        const shuffledCards = [...memoryPairs].sort(() => Math.random() - 0.5);
+
+        shuffledCards.forEach((cardData, index) => {
+            const card = document.createElement('div');
+            card.className = 'memory-card';
+            card.dataset.pairId = cardData.id;
+            card.dataset.index = index;
+
+            card.innerHTML = `
+                <div class="card-face card-back"></div>
+                <div class="card-face card-front">${cardData.text}</div>
+            `;
+
+            card.onclick = () => flipCard(card);
+            board.appendChild(card);
+        });
+    }
+
+    function flipCard(card) {
+        // Klick-Sperren abfragen (während Prüfung oder wenn Karte schon offen/weg ist)
+        if (lockBoard) return;
+        if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+        card.classList.add('flipped', 'checking');
+        flippedCards.push(card);
+
+        // Wenn zwei Karten aufgedeckt sind, wird geprüft
+        if (flippedCards.length === 2) {
+            lockBoard = true;
+            checkMatch();
+        }
+    }
+
+    function checkMatch() {
+        const [card1, card2] = flippedCards;
+        const isMatch = card1.dataset.pairId === card2.dataset.pairId;
+
+        if (isMatch) {
+            // Paar richtig!
+            card1.classList.add('correct-pair');
+            card2.classList.add('correct-pair');
+            matchesFound++;
+
+            setTimeout(() => {
+                card1.classList.replace('flipped', 'matched');
+                card2.classList.replace('flipped', 'matched');
+                resetTurn();
+
+                // Wenn alle 6 Paare weg sind
+                if (matchesFound === memoryPairs.length / 2) {
+                    document.getElementById('feedback-area').innerHTML = '<span class="success-text">🎉 Großartig! Du hast alle Vokabelpaare erfolgreich aufgedeckt!</span>';
+                }
+            }, 800); // Zeit, in der die Karten grün leuchten, bevor sie ausblenden
+        } else {
+            // Paar falsch!
+            card1.classList.add('wrong-pair');
+            card2.classList.add('wrong-pair');
+
+            setTimeout(() => {
+                card1.classList.remove('flipped', 'checking', 'wrong-pair');
+                card2.classList.remove('flipped', 'checking', 'wrong-pair');
+                resetTurn();
+            }, 1200); // Zeit, um sich die falschen Karten zu merken
+        }
+    }
+
+    function resetTurn() {
+        flippedCards = [];
+        lockBoard = false;
+    }
+
+    function resetGame() {
+        initBoard();
+    }
+
+    // Beim Laden der Seite das Memory initialisieren
+    window.onload = initBoard;
+</script>
+
+</body>
+</html>
