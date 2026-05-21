@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Hörverstehen</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 550px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 5px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .progress-indicator {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #457b9d;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        /* --- Audioplayer Box --- */
+        .audio-player-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .play-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.05);
+            background: #357abd;
+        }
+
+        .play-btn svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+            margin-left: 4px; /* Optische Zentrierung des Play-Dreiecks */
+        }
+
+        .audio-status {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0369a1;
+        }
+
+        /* --- Antwortoptionen --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 440px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .option-card {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        @media (hover: hover) {
+            .option-card:hover:not(.disabled) {
+                border-color: var(--primary-color);
+                background: #f8fafc;
+            }
+        }
+
+        .option-card.disabled {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .option-card.correct {
+            background-color: #d1fae5;
+            border-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .option-card.wrong {
+            background-color: #ffe3e3;
+            border-color: var(--error-color);
+            color: #b71c1c;
+        }
+
+        /* --- System-Buttons --- */
+        .btn-reset {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            align-self: center;
+        }
+        .btn-reset:hover { background: #475569; }
+
+        .feedback {
+            text-align: center;
+            min-height: 45px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            line-height: 1.4;
+            margin-top: 20px;
+        }
+
+        .success-text { color: var(--success-color); }
+        .error-text { color: var(--error-color); }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Hörverstehen-Check</h1>
+    <div class="progress-indicator" id="progress-text">Aufgabe 1 von 6</div>
+    <p class="instruction">Klicke auf den Play-Button, höre genau zu und wähle die Formulierung aus, die du gerade gehört hast.</p>
+
+    <!-- Der Audioplayer -->
+    <div class="audio-player-box">
+        <button class="play-btn" onclick="playAudio()" aria-label="Audio abspielen">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="audio-status" id="audio-status">Audio bereit</div>
+    </div>
+
+    <!-- Antwortmöglichkeiten -->
+    <div class="options-grid" id="options-box">
+        <!-- Wird per JS befüllt -->
+    </div>
+
+    <button class="btn-reset" onclick="resetGame()">Neustart</button>
+    <div class="feedback" id="feedback-area"></div>
+</div>
+
+<script>
+    // 6 vertonte Hörbeispiele direkt aus dem Kontext der Lektion
+    const audioQuizData = [
+        {
+            textToSpeak: "Это последняя капля",
+            correct: "последняя капля",
+            options: ["первая капля", "последняя капля", "новая капля", "большая капля"],
+            translation: "Bedeutung: „der letzte Tropfen“"
+        },
+        {
+            textToSpeak: "Собирай свои вещи и уходи",
+            correct: "собирай свои вещи",
+            options: ["собирай свои книги", "собирай свои вещи", "открой свои вещи", "забудь свои вещи"],
+            translation: "Bedeutung: „pack deine Sachen“"
+        },
+        {
+            textToSpeak: "Ты меня обманул",
+            correct: "меня обманул",
+            options: ["меня послушал", "меня обманул", "меня обнял", "меня забыл"],
+            translation: "Bedeutung: „du hast mich belogen“"
+        },
+        {
+            textToSpeak: "Кто-то сделал что-то плохое",
+            correct: "что-то плохое",
+            options: ["что-то хорошее", "что-то интересное", "что-то плохое", "что-то новое"],
+            translation: "Bedeutung: „etwas Schlechtes“"
+        },
+        {
+            textToSpeak: "Я больше не могу быть спокойным",
+            correct: "быть спокойным",
+            options: ["быть спокойным", "быть весёлым", "быть занятым", "быть готовым"],
+            translation: "Bedeutung: „ruhig bleiben / sein“"
+        },
+        {
+            textToSpeak: "Напишите ваш пример в комментариях",
+            correct: "в комментариях",
+            options: ["в тетради", "в письме", "в комментариях", "в книге"],
+            translation: "Bedeutung: „in den Kommentaren“"
+        }
+    ];
+
+    let currentQuestionIdx = 0;
+
+    function initQuestion() {
+        if (currentQuestionIdx >= audioQuizData.length) {
+            document.getElementById('progress-text').textContent = "Fertig!";
+            document.getElementById('audio-status').textContent = "Alle Aufgaben gelöst!";
+            document.getElementById('options-box').innerHTML = '';
+            document.getElementById('feedback-area').innerHTML = '<span class="success-text">🎉 Fantastisch! Du hast alle Phrasen perfekt verstanden!</span>';
+            return;
+        }
+
+        const currentData = audioQuizData[currentQuestionIdx];
+        
+        document.getElementById('progress-text').textContent = `Aufgabe ${currentQuestionIdx + 1} von ${audioQuizData.length}`;
+        document.getElementById('audio-status').textContent = "Audio bereit";
+        document.getElementById('feedback-area').innerHTML = '';
+
+        const optionsBox = document.getElementById('options-box');
+        optionsBox.innerHTML = '';
+
+        // Optionen für die unvorhersehbare Reihenfolge mischen
+        const shuffledOptions = [...currentData.options].sort(() => Math.random() - 0.5);
+
+        shuffledOptions.forEach(opt => {
+            const card = document.createElement('div');
+            card.className = 'option-card';
+            card.textContent = opt;
+            card.onclick = () => checkAnswer(card, opt);
+            optionsBox.appendChild(card);
+        });
+    }
+
+    // Sprachausgabe-Funktion via Web Speech API
+    function playAudio() {
+        if (!('speechSynthesis' in window)) {
+            alert("Die Sprachausgabe wird von deinem Browser leider nicht unterstützt. Nutze am besten Chrome or Safari.");
+            return;
+        }
+
+        // Eventuell laufende Sprachausgabe stoppen
+        window.speechSynthesis.cancel();
+
+        const currentData = audioQuizData[currentQuestionIdx];
+        const utterance = new SpeechSynthesisUtterance(currentData.textToSpeak);
+        
+        utterance.lang = 'ru-RU'; // Setzt die Sprache fest auf Russisch
+        utterance.rate = 0.85;    // Leicht verlangsamt für optimales Schüler-Hörverständnis
+
+        utterance.onstart = () => {
+            document.getElementById('audio-status').textContent = "🔊 Audio wird abgespielt...";
+        };
+
+        utterance.onend = () => {
+            document.getElementById('audio-status').textContent = "🔊 Erneut abspielen?";
+        };
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function checkAnswer(cardElement, selectedValue) {
+        const currentData = audioQuizData[currentQuestionIdx];
+        const allCards = document.querySelectorAll('.option-card');
+        const feedback = document.getElementById('feedback-area');
+
+        // Klicks sperren
+        allCards.forEach(c => c.classList.add('disabled'));
+
+        if (selectedValue === currentData.correct) {
+            cardElement.classList.add('correct');
+            feedback.innerHTML = `<span class="success-text">🎉 Richtig gehört!<br><small style="color:#64748b;">${currentData.translation}</small></span>`;
+            
+            setTimeout(() => {
+                currentQuestionIdx++;
+                initQuestion();
+            }, 1600);
+        } else {
+            cardElement.classList.add('wrong');
+            feedback.innerHTML = '<span class="error-text">Leider falsch. Höre noch einmal genau hin!</span>';
+
+            // Nach kurzer Zeit den Fehler zurücksetzen, damit neu probiert werden kann
+            setTimeout(() => {
+                cardElement.classList.remove('wrong');
+                allCards.forEach(c => c.classList.remove('disabled'));
+                feedback.innerHTML = '';
+            }, 1500);
+        }
+    }
+
+    function resetGame() {
+        window.speechSynthesis.cancel();
+        currentQuestionIdx = 0;
+        initQuestion();
+    }
+
+    // Beim ersten Start laden
+    window.onload = initQuestion;
+</script>
+
+</body>
+</html>
