@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Emoji-Gefühlsbarometer</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 650px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .speech-bubble {
+            background-color: #ffe3e3;
+            border: 2px solid var(--error-color);
+            color: #b71c1c;
+            padding: 15px 30px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(231, 29, 54, 0.1);
+        }
+
+        /* --- Das interaktive Barometer --- */
+        .barometer-container {
+            width: 240px;
+            height: 120px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .barometer-scale {
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: conic-gradient(from -90deg, #2ec4b6 0deg 30deg, #ff9f1c 30deg 110deg, #e71d36 110deg 180deg, #f1f5f9 180deg);
+            position: absolute;
+            top: 0;
+            left: 0;
+            mask: radial-gradient(circle at 50% 50%, transparent 80px, #000 81px);
+            -webkit-mask: radial-gradient(circle at 100px 100px, transparent 80px, #000 81px);
+            clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 0% 50%);
+        }
+
+        .barometer-needle {
+            width: 6px;
+            height: 100px;
+            background: #2b2d42;
+            position: absolute;
+            bottom: 0;
+            left: calc(50% - 3px);
+            transform-origin: bottom center;
+            transform: rotate(-90deg);
+            transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .barometer-center {
+            width: 16px;
+            height: 16px;
+            background: #2b2d42;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -8px;
+            left: calc(50% - 8px);
+        }
+
+        /* --- Emoji Grid --- */
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 520px) {
+            .emoji-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .emoji-card {
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            text-align: center;
+        }
+
+        .emoji-icon {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+        }
+
+        .emoji-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        @media (hover: hover) {
+            .emoji-card:hover:not(.disabled) {
+                border-color: var(--primary-color);
+                background: #edf2f7;
+                transform: translateY(-2px);
+            }
+        }
+
+        .emoji-card.correct {
+            background-color: #d1fae5;
+            border-color: var(--success-color);
+        }
+        .emoji-card.wrong {
+            background-color: #ffe3e3;
+            border-color: var(--error-color);
+            opacity: 0.6;
+        }
+        .emoji-card.disabled {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            text-align: center;
+            min-height: 45px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .success-text { color: var(--success-color); }
+        .error-text { color: var(--error-color); }
+
+        .btn-reset {
+            margin-top: 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: none;
+        }
+        .btn-reset:hover { background: #357abd; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Emoji-Gefühlsbarometer</h1>
+    <p class="instruction">Welches Emoji beschreibt die wahre Gefühlslage und Stimmung des Sprechers am besten?</p>
+
+    <div class="speech-bubble">„Это последняя капля!“</div>
+
+    <!-- Das visuelle Barometer -->
+    <div class="barometer-container">
+        <div class="barometer-scale"></div>
+        <div class="barometer-needle" id="needle"></div>
+        <div class="barometer-center"></div>
+    </div>
+
+    <!-- Emojis zur Auswahl -->
+    <div class="emoji-grid" id="emoji-container">
+        <!-- Wird per JS befüllt -->
+    </div>
+
+    <div class="feedback" id="feedback-area"></div>
+    <button class="btn-reset" id="reset-btn" onclick="resetQuiz()">Neustart</button>
+</div>
+
+<script>
+    // Nun 6 Aussagen zur Auswahl
+    const emojilist = [
+        { icon: "🥳", label: "Feiernd / Froh", angle: -70, isCorrect: false, desc: "Nein, absolut nicht. Die Person feiert in diesem Moment ganz sicher kein Fest." },
+        { icon: "😴", label: "Müde / Erschöpft", angle: -40, isCorrect: false, desc: "Nicht ganz. Man ist der Situation zwar überdrüssig, aber der Ausruf transportiert eine viel aktivere Emotion." },
+        { icon: "🤔", label: "Nachdenklich / Unschlüssig", angle: -10, isCorrect: false, desc: "Falsch. Die Person wägt nicht mehr ab und denkt nicht nach – die Entscheidung ist längst gefallen." },
+        { icon: "😱", label: "Erschrocken / Gestresst", angle: 20, isCorrect: false, desc: "Es ist zwar eine Stresssituation, aber es dominiert nicht die Angst oder der Schock, sondern der Ärger." },
+        { icon: "😢", label: "Traurig / Enttäuscht", angle: 50, isCorrect: false, desc: "Es schwingt zwar Enttäuschung mit, aber die Emotion bricht sich in einer viel energischeren Reaktion Bahn." },
+        { icon: "😡", label: "Wütend / Entschlossen", angle: 82, isCorrect: true, desc: "Perfekt! Der Sprecher ist wütend, verärgert und fest entschlossen, das Fehlverhalten ab jetzt nicht mehr zu dulden." }
+    ];
+
+    function initQuiz() {
+        const container = document.getElementById('emoji-container');
+        container.innerHTML = '';
+        document.getElementById('feedback-area').innerHTML = '';
+        document.getElementById('reset-btn').style.display = 'none';
+        document.getElementById('needle').style.transform = 'rotate(-90deg)'; // Zeiger zurücksetzen
+
+        // Emojis mischen
+        const shuffled = [...emojilist].sort(() => Math.random() - 0.5);
+
+        shuffled.forEach(emoji => {
+            const card = document.createElement('div');
+            card.className = 'emoji-card';
+            card.innerHTML = `
+                <div class="emoji-icon">${emoji.icon}</div>
+                <div class="emoji-label">${emoji.label}</div>
+            `;
+            card.onclick = () => selectEmoji(card, emoji);
+            container.appendChild(card);
+        });
+    }
+
+    function selectEmoji(cardElement, emojiData) {
+        const allCards = document.querySelectorAll('.emoji-card');
+        const needle = document.getElementById('needle');
+        const feedback = document.getElementById('feedback-area');
+
+        allCards.forEach(c => c.classList.add('disabled'));
+
+        // Zeiger des Barometers ausschlagen lassen
+        needle.style.transform = `rotate(${emojiData.angle}deg)`;
+
+        if (emojiData.isCorrect) {
+            cardElement.classList.add('correct');
+            feedback.innerHTML = `<span class="success-text">🎉 Absolut richtig!<br>${emojiData.desc}</span>`;
+        } else {
+            cardElement.classList.add('wrong');
+            feedback.innerHTML = `<span class="error-text">${emojiData.desc}</span>`;
+
+            // Richtige Antwort automatisch mit aufdecken
+            setTimeout(() => {
+                allCards.forEach(c => {
+                    const label = c.querySelector('.emoji-label').textContent;
+                    const correctData = emojilist.find(e => e.isCorrect);
+                    if (correctData && label === correctData.label) {
+                        c.classList.add('correct');
+                    }
+                });
+            }, 600);
+        }
+
+        document.getElementById('reset-btn').style.display = 'block';
+    }
+
+    function resetQuiz() {
+        initQuiz();
+    }
+
+    window.onload = initQuiz;
+</script>
+
+</body>
+</html>
