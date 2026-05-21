@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Bild-Metapher</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+            --barrel-color: #8b5a2b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 650px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+
+        /* --- CSS Animation der Metapher --- */
+        .visual-area {
+            position: relative;
+            width: 200px;
+            height: 220px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-bottom: 30px;
+            background: #edf2f7;
+            border-radius: 12px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Der fallende Tropfen */
+        .drop {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background-color: #3a86ff;
+            border-radius: 0 50% 50% 50%;
+            transform: rotate(45deg) translateX(-50%);
+            animation: fall 2.5s infinite ease-in;
+        }
+
+        /* Das Fass */
+        .barrel {
+            position: relative;
+            width: 90px;
+            height: 110px;
+            background: var(--barrel-color);
+            border-radius: 15px / 25px;
+            border: 4px solid #5c3a1a;
+            overflow: hidden;
+        }
+
+        /* Die Ringe des Fasses */
+        .barrel::before, .barrel::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: #d4af37;
+            border-top: 1px solid #5c3a1a;
+            border-bottom: 1px solid #5c3a1a;
+        }
+        .barrel::before { top: 25px; }
+        .barrel::after { bottom: 25px; }
+
+        /* Das Wasser im Fass (steigt fast bis zum Rand) */
+        .water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 92%;
+            background: #3a86ff;
+            opacity: 0.8;
+            animation: ripple 2.5s infinite ease-in-out;
+        }
+
+        /* --- Optionen --- */
+        .options-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            text-align: left;
+        }
+
+        @media (hover: hover) {
+            .option:hover:not(.disabled) {
+                border-color: var(--primary-color);
+                background: #edf2f7;
+                transform: translateY(-1px);
+            }
+        }
+
+        .option.correct {
+            background-color: #d1fae5;
+            border-color: var(--success-color);
+            color: #065f46;
+            font-weight: 600;
+        }
+
+        .option.wrong {
+            background-color: #ffe3e3;
+            border-color: var(--error-color);
+            color: #b71c1c;
+            opacity: 0.7;
+        }
+
+        .option.disabled {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* --- Feedback & Reset --- */
+        .feedback {
+            margin-top: 25px;
+            text-align: center;
+            min-height: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .success-text { color: var(--success-color); }
+        .error-text { color: var(--error-color); }
+
+        .btn-reset {
+            margin-top: 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: none;
+        }
+
+        .btn-reset:hover {
+            background: #357abd;
+        }
+
+        /* --- Animation Keyframes --- */
+        @keyframes fall {
+            0% { top: -20px; opacity: 1; }
+            45% { top: 90px; opacity: 1; }
+            46% { opacity: 0; }
+            100% { top: 90px; opacity: 0; }
+        }
+
+        @keyframes ripple {
+            0%, 44% { height: 91%; }
+            50% { height: 95%; background: #5397ff; }
+            65%, 100% { height: 91%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Was bedeutet diese Bild-Metapher?</h1>
+    <p class="instruction">Schau dir die Animation an. Welche übertragene Bedeutung beschreibt dieses Bild im Russischen?</p>
+
+    <!-- Animierte Grafik -->
+    <div class="visual-area">
+        <div class="drop"></div>
+        <div class="barrel">
+            <div class="water"></div>
+        </div>
+    </div>
+
+    <!-- Antwortoptionen -->
+    <div class="options-list" id="options-container">
+        <!-- Wird per JS generiert -->
+    </div>
+
+    <div class="feedback" id="feedback-text"></div>
+    <button class="btn-reset" id="reset-btn" onclick="resetQuiz()">Nochmal versuchen</button>
+</div>
+
+<script>
+    // Definitionen der Optionen. 'correct: true' markiert die richtige Antwort.
+    const questions = [
+        { text: "Der Moment, in dem eine Person eine große, freudige Überraschung erlebt.", correct: false },
+        { text: "Der Moment, in dem die Geduld vorbei ist, weil das Maß voll ist.", correct: true },
+        { text: "Der Versuch, eine schwierige Aufgabe mit besonders viel Ruhe zu lösen.", correct: false }
+    ];
+
+    function loadQuiz() {
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        document.getElementById('feedback-text').innerHTML = '';
+        document.getElementById('reset-btn').style.display = 'none';
+
+        // Optionen zufällig mischen, damit es spannend bleibt
+        const shuffledOptions = [...questions].sort(() => Math.random() - 0.5);
+
+        shuffledOptions.forEach((option) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.textContent = option.text;
+            
+            // Klick-Event hinzufügen
+            div.onclick = () => checkAnswer(div, option.correct);
+            
+            container.appendChild(div);
+        });
+    }
+
+    function checkAnswer(selectedElement, isCorrect) {
+        const allOptions = document.querySelectorAll('.option');
+        const feedback = document.getElementById('feedback-text');
+
+        // Alle Optionen für weitere Klicks sperren
+        allOptions.forEach(opt => opt.classList.add('disabled'));
+
+        if (isCorrect) {
+            selectedElement.classList.add('correct');
+            feedback.innerHTML = '<span class="success-text">🎉 Richtig! Das Bild steht für „последняя капля“ – das Fass bringt den letzten Tropfen zum Überlaufen.</span>';
+            document.getElementById('reset-btn').style.display = 'block';
+            document.getElementById('reset-btn').textContent = "Nochmal spielen";
+        } else {
+            selectedElement.classList.add('wrong');
+            feedback.innerHTML = '<span class="error-text">Leider falsch. Schau dir das volle Fass noch einmal genau an...</span>';
+            
+            // Richtige Antwort zur Aufklärung trotzdem grün markieren
+            allOptions.forEach(opt => {
+                // Suchen der korrekten Antwort im Array, um sie hervorzuheben
+                const match = questions.find(q => q.text === opt.textContent);
+                if (match && match.correct) {
+                    opt.classList.add('correct');
+                }
+            });
+            
+            document.getElementById('reset-btn').style.display = 'block';
+            document.getElementById('reset-btn').textContent = "Nochmal versuchen";
+        }
+    }
+
+    function resetQuiz() {
+        loadQuiz();
+    }
+
+    // Quiz beim Start initialisieren
+    window.onload = loadQuiz;
+</script>
+
+</body>
+</html>
