@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russisch-Quiz: Dialog-Vervollständigung</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --success-color: #2ec4b6;
+            --error-color: #e71d36;
+            --bg-color: #efeae2; /* Typischer Chat-Hintergrund */
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+            --chat-in: #ffffff;
+            --chat-out: #d9fdd3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 550px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .progress-indicator {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #457b9d;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        /* --- Messenger Chatfenster --- */
+        .chat-window {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(rgba(0,0,0,0.04) 1px, transparent 0);
+            background-size: 16px 16px;
+            border: 1px solid #e1e1e1;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            line-height: 1.4;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .bubble-a {
+            background-color: var(--chat-in);
+            align-self: flex-start;
+            border-top-left-radius: 0;
+        }
+
+        .bubble-b {
+            background-color: var(--chat-out);
+            align-self: flex-end;
+            border-top-right-radius: 0;
+            font-weight: bold;
+            color: #128c7e;
+        }
+
+        .sender-name {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #8696a0;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        /* --- Antwort-Optionen --- */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .option-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        @media (hover: hover) {
+            .option-card:hover:not(.disabled) {
+                border-color: var(--primary-color);
+                background: #f1f5f9;
+            }
+        }
+
+        .option-card.disabled {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .option-card.correct {
+            background-color: #d1fae5;
+            border-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .option-card.wrong {
+            background-color: #ffe3e3;
+            border-color: var(--error-color);
+            color: #b71c1c;
+        }
+
+        /* --- Kontroll-Elemente --- */
+        .btn-reset {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            align-self: center;
+        }
+        .btn-reset:hover { background: #475569; }
+
+        .feedback {
+            text-align: center;
+            min-height: 40px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            line-height: 1.4;
+            margin-top: 15px;
+        }
+
+        .success-text { color: var(--success-color); }
+        .error-text { color: var(--error-color); }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Dialog-Vervollständigung</h1>
+    <div class="progress-indicator" id="progress-text">Chat 1 von 6</div>
+    <p class="instruction">Welche Aussage von Person A passt logisch zur darauffolgenden Reaktion von Person B?</p>
+
+    <!-- Chat-Verlauf -->
+    <div class="chat-window">
+        <div class="chat-bubble bubble-a">
+            <div class="sender-name">Person A</div>
+            <div id="chat-text-a">...</div>
+        </div>
+        <div class="chat-bubble bubble-b">
+            <div class="sender-name">Person B (Du)</div>
+            <div id="chat-text-b">...</div>
+        </div>
+    </div>
+
+    <!-- Auswahl-Optionen -->
+    <div class="options-container" id="options-box">
+        <!-- Wird per JS geladen -->
+    </div>
+
+    <button class="btn-reset" onclick="resetGame()">Neustart</button>
+    <div class="feedback" id="feedback-area"></div>
+</div>
+
+<script>
+    // 6 abwechslungsreiche Chatszenarien mit Fokus auf die gelernten Sätze
+    const dialogs = [
+        {
+            responseB: "Собирай свои вещи и уходи!",
+            responseBHint: "(Pack deine Sachen und geh!)",
+            options: [
+                { text: "Ты меня обманул, и это последняя капля.", isCorrect: true, feedback: "Richtig! Der Vertrauensbruch ist der Auslöser für den Rauswurf." },
+                { text: "Погода сегодня очень хорошая.", isCorrect: false, feedback: "Falsch. Das schöne Wetter ist kein Grund, jemanden wegzuschicken." }
+            ]
+        },
+        {
+            responseB: "Это последняя капля для меня.",
+            responseBHint: "(Das ist der letzte Tropfen für mich.)",
+            options: [
+                { text: "Кто-то сделал что-то плохое.", isCorrect: true, feedback: "Richtig! Ein schlechtes Verhalten führt dazu, dass die Geduld reißt." },
+                { text: "Я купил новый вкусный чай.", isCorrect: false, feedback: "Falsch. Neuer Tee sorgt im Normalfall nicht für das Überlaufen des Fasses." }
+            ]
+        },
+        {
+            responseB: "Я больше не могу быть спокойным.",
+            responseBHint: "(Ich kann nicht mehr ruhig bleiben.)",
+            options: [
+                { text: "Наш компьютер опять сломался в десятый раз!", isCorrect: true, feedback: "Perfekt! Ein wiederholter technischer Defekt strapaziert die Nerven maximal." },
+                { text: "Всё идёт строго по нашему плану.", isCorrect: false, feedback: "Falsch. Wenn alles nach Plan läuft, gibt es keinen Grund zur Beunruhigung." }
+            ]
+        },
+        {
+            responseB: "Спасибо! Я обязательно напишу.",
+            responseBHint: "(Danke! Ich werde definitiv schreiben.)",
+            options: [
+                { text: "Напишите ваш пример в комментариях.", isCorrect: true, feedback: "Richtig! Das ist die passende Antwort auf die Aufforderung, einen Kommentar zu hinterlassen." },
+                { text: "Это последняя капля!", isCorrect: false, feedback: "Falsch. Bei einem Wutausbruch bedankt man sich im Regelfall nicht." }
+            ]
+        },
+        {
+            responseB: "Потому что ты снова опоздал на работу!",
+            responseBHint: "(Weil du schon wieder zu spät zur Arbeit gekommen bist!)",
+            options: [
+                { text: "Почему шеф сегодня так кричит и злится?", isCorrect: true, feedback: "Richtig! Die wiederholte Verspätung erklärt den emotionalen Ausbruch des Chefs." },
+                { text: "Где можно купить вкусный кофе?", isCorrect: false, feedback: "Falsch. Kaffee steht hier in keinem logischen Kontext." }
+            ]
+        },
+        {
+            responseB: "Да, его терпение полностью закончилось.",
+            responseBHint: "(Ja, seine Geduld ist komplett am Ende.)",
+            options: [
+                { text: "Это действительно была его последняя капля?", isCorrect: true, feedback: "Exakt! Der sprichwörtliche letzte Tropfen bedeutet das Ende aller Geduld." },
+                { text: "Он любит гулять в парке вечерами?", isCorrect: false, feedback: "Leider falsch. Das Spazierengehen korreliert nicht mit dem Verlust der Geduld." }
+            ]
+        }
+    ];
+
+    let currentDialogIdx = 0;
+
+    function initDialog() {
+        if (currentDialogIdx >= dialogs.length) {
+            // Alle Dialoge abgeschlossen
+            document.getElementById('progress-text').textContent = "Fertig!";
+            document.getElementById('chat-text-a').innerHTML = "🎉 <strong>Großartig!</strong>";
+            document.getElementById('chat-text-b').innerHTML = "Du hast alle Dialoge logisch vervollständigt.";
+            document.getElementById('options-box').innerHTML = '';
+            document.getElementById('feedback-area').innerHTML = '';
+            return;
+        }
+
+        const currentData = dialogs[currentDialogIdx];
+
+        // UI befüllen
+        document.getElementById('progress-text').textContent = `Chat ${currentDialogIdx + 1} von ${dialogs.length}`;
+        document.getElementById('chat-text-a').textContent = "???"; // Gesuchte Vorgeschichte
+        document.getElementById('chat-text-b').innerHTML = `${currentData.responseB} <br><span style="font-size:0.85rem; font-weight:normal; color:#667781;">${currentData.responseBHint}</span>`;
+        document.getElementById('feedback-area').innerHTML = '';
+
+        const optionsBox = document.getElementById('options-box');
+        optionsBox.innerHTML = '';
+
+        // Optionen zufällig mischen
+        const shuffledOptions = [...currentData.options].sort(() => Math.random() - 0.5);
+
+        shuffledOptions.forEach(opt => {
+            const card = document.createElement('div');
+            card.className = 'option-card';
+            card.textContent = opt.text;
+            card.onclick = () => selectOption(card, opt);
+            optionsBox.appendChild(card);
+        });
+    }
+
+    function selectOption(cardElement, optionData) {
+        const allCards = document.querySelectorAll('.option-card');
+        const feedback = document.getElementById('feedback-area');
+
+        // Klicks einfrieren
+        allCards.forEach(c => c.classList.add('disabled'));
+
+        if (optionData.isCorrect) {
+            cardElement.classList.add('correct');
+            // Die richtige Option oben in die Sprechblase von Person A eintragen
+            document.getElementById('chat-text-a').textContent = optionData.text;
+            feedback.innerHTML = `<span class="success-text">${optionData.feedback}</span>`;
+
+            // Nach kurzer Verzögerung zum nächsten Chat springen
+            setTimeout(() => {
+                currentDialogIdx++;
+                initDialog();
+            }, 1500);
+        } else {
+            cardElement.classList.add('wrong');
+            feedback.innerHTML = `<span class="error-text">${optionData.feedback} Versuch es noch einmal!</span>`;
+
+            // Nach kurzer Zeit Fehlerfarbe entfernen und Auswahl wieder freigeben
+            setTimeout(() => {
+                cardElement.classList.remove('wrong');
+                allCards.forEach(c => c.classList.remove('disabled'));
+                feedback.innerHTML = '';
+            }, 1500);
+        }
+    }
+
+    function resetGame() {
+        currentDialogIdx = 0;
+        initDialog();
+    }
+
+    // Beim Laden direkt starten
+    window.onload = initDialog;
+</script>
+
+</body>
+</html>
